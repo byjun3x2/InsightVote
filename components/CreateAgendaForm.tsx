@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 
 interface Props {
-  onSubmit: (data: { title: string; options: { text: string }[] }) => void;
+  onSubmit: (data: { title: string; options: { text: string }[]; startTime?: string; deadline?: string; voteLimit?: number }) => void;
   onCancel: () => void;
 }
 
 const CreateAgendaForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
   const [title, setTitle] = useState('');
   const [options, setOptions] = useState([{ text: '' }, { text: '' }]);
+  const [startTime, setStartTime] = useState('');
+  const [deadline, setDeadline] = useState('');
+  const [voteLimit, setVoteLimit] = useState('');
 
   const handleOptionChange = (index: number, value: string) => {
     const newOptions = [...options];
@@ -28,7 +31,13 @@ const CreateAgendaForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
     e.preventDefault();
     const validOptions = options.filter(opt => opt.text.trim() !== '');
     if (title.trim() && validOptions.length >= 2) {
-      onSubmit({ title, options: validOptions });
+      onSubmit({ 
+        title, 
+        options: validOptions, 
+        startTime,
+        deadline, 
+        voteLimit: voteLimit ? parseInt(voteLimit, 10) : undefined 
+      });
     }
   };
 
@@ -86,6 +95,40 @@ const CreateAgendaForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
       <button type="button" onClick={addOption} style={{ ...buttonStyle, backgroundColor: '#007bff', color: 'white', marginTop: '0.5rem' }}>
         선택지 추가
       </button>
+
+      <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ flex: 1, marginTop: '1.5rem' }}>
+          <h4>투표 시작 시간 (선택 사항)</h4>
+          <input
+            type="datetime-local"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
+        <div style={{ flex: 1, marginTop: '1.5rem' }}>
+          <h4>투표 마감 시간 (선택 사항)</h4>
+          <input
+            type="datetime-local"
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
+      </div>
+
+      <div style={{ marginTop: '1.5rem' }}>
+        <h4>최대 투표 인원 (선택 사항, 0 또는 미입력 시 무제한)</h4>
+        <input
+          type="number"
+          min="0"
+          placeholder="예: 10"
+          value={voteLimit}
+          onChange={(e) => setVoteLimit(e.target.value)}
+          style={inputStyle}
+        />
+      </div>
+
       <div style={{ marginTop: '1.5rem' }}>
         <button type="submit" style={{ ...buttonStyle, backgroundColor: '#28a745', color: 'white' }}>
           안건 생성

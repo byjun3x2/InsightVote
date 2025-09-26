@@ -1,55 +1,69 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-
-let socket: Socket;
+import { Agenda, VoteResult } from '../utils/types';
+import AgendaList from '../components/AgendaList';
+import ResultChart from '../components/ResultChart';
 
 const Home: React.FC = () => {
-  const [vote, setVote] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+  const [agendas, setAgendas] = useState<Agenda[]>([]);
+  const [selectedAgendaId, setSelectedAgendaId] = useState<string>('');
+  const [selectedOptionId, setSelectedOptionId] = useState<string>('');
+  const [results, setResults] = useState<VoteResult[]>([]);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    socket = io('http://localhost:4000');
+    fetch('http://localhost:4000/api/agendas')
+      .then((res) => res.json())
+      .then((data) => setAgendas(data))
+      .catch(console.error);
+  }, []);
 
-    socket.on('connect', () => {
-      console.log('서버 연결됨:', socket.id);
+  useEffect(() => {
+    socketRef.current = io('http://localhost:4000');
+
+    socketRef.current.on('connect', () => {
+      console.log('서버에 연결됨:', socketRef.current?.id);
     });
 
-    socket.on('voteUpdate', (updatedVoteData) => {
-      setResults((prev) => [...prev, updatedVoteData]);
+    socketRef.current.on('voteUpdate', (voteData) => {
+      setResults((prev) => [...prev, voteData]);
     });
 
     return () => {
-      socket.disconnect();
+      socketRef.current?.disconnect();
     };
   }, []);
 
   const submitVote = () => {
-    if (vote.trim()) {
-      socket.emit('voteSubmit', { choice: vote, timestamp: Date.now() });
-      setVote('');
+    if (selectedOptionId && selectedAgendaId && socketRef.current) {
+      socketRef.current.emit('voteSubmit', {
+        agendaId: selectedAgendaId,
+        optionId: selectedOptionId,
+        timestamp: Date.now(),
+      });
+
+      setSelectedOptionId('');
+      setSelectedAgendaId('');
     }
   };
 
   return (
     <div style={{ padding: '1rem' }}>
-      <h1>투표 제출 및 실시간 업데이트 로직 구현</h1>
-      <input
-        type="text"
-        value={vote}
-        onChange={(e) => setVote(e.target.value)}
-        placeholder="투표 선택 입력"
+      <h1>InsightVote - 실시간 투표</h1>
+
+      <AgendaList
+        agendas={agendas}
+        selectedAgendaId={selectedAgendaId}
+        onSelectAgenda={setSelectedAgendaId}
+        selectedOptionId={selectedOptionId}
+        onSelectOption={setSelectedOptionId}
       />
-      <button onClick={submitVote}>투표 제출</button>
-      <div>
-        <h3>실시간 투표 결과</h3>
-        <ul>
-          {results.map((res, idx) => (
-            <li key={idx}>
-              선택: {res.choice} - 시간: {new Date(res.timestamp).toLocaleTimeString()}
-            </li>
-          ))}
-        </ul>
-      </div>
+
+      <button onClick={submitVote} disabled={!selectedOptionId}>
+        투표 제출
+      </button>
+
+      <ResultChart results={results} />
     </div>
   );
 };

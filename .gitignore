@@ -1,0 +1,22 @@
+.idea/
+
+# Yarn Berry PnP 관련
+.yarn/cache
+.yarn/build-state.yml
+.pnp.loader.mjs
+.pnp.loader.cjs
+.pnp.cjs
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+
+
+# MacOS, IDE 관련
+.vscode/
+.DS_Store
+
+# Node.js
+node_modules/

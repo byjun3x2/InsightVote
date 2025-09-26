@@ -121,7 +121,6 @@ const Home: React.FC = () => {
 
       if (response.ok) {
         fetchAgendas(); // 목록 새로고침
-        setSelectedAgendaId(''); // 선택 해제
       }
     } catch (e) {
       console.error('Error closing agenda:', e);

@@ -56,9 +56,7 @@ const AgendaCard: React.FC<Props> = ({ agenda, isSelected, onSelect, onDelete, c
   };
 
   const handleSelect = () => {
-    if (agenda.isActive) {
-      onSelect(agenda.id);
-    }
+    onSelect(agenda.id);
   };
 
   const handleDelete = (e: React.MouseEvent) => {

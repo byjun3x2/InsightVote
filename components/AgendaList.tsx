@@ -9,6 +9,8 @@ interface Props {
   onSelectAgenda: (id: string) => void;
   selectedOptionId: string;
   onSelectOption: (id: string) => void;
+  onCloseAgenda: (id: string) => void;
+  onDeleteAgenda: (id: string) => void;
 }
 
 const AgendaList: React.FC<Props> = ({
@@ -17,8 +19,20 @@ const AgendaList: React.FC<Props> = ({
                                        onSelectAgenda,
                                        selectedOptionId,
                                        onSelectOption,
+                                       onCloseAgenda,
+                                       onDeleteAgenda,
                                      }) => {
   const selectedAgenda = agendas.find((a) => a.id === selectedAgendaId);
+
+  const closeButtonStyle: React.CSSProperties = {
+    backgroundColor: '#dc3545',
+    color: 'white',
+    border: 'none',
+    padding: '0.5rem 1rem',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    marginLeft: '1rem',
+  };
 
   return (
     <div>
@@ -30,13 +44,21 @@ const AgendaList: React.FC<Props> = ({
             agenda={agenda}
             isSelected={agenda.id === selectedAgendaId}
             onSelect={onSelectAgenda}
+            onDelete={onDeleteAgenda}
           />
         ))}
       </div>
 
       {selectedAgenda && (
         <div style={{ marginTop: '2rem' }}>
-          <h2>{selectedAgenda.title}: 선택지</h2>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <h2>{selectedAgenda.title}: 선택지</h2>
+            {selectedAgenda.isActive && (
+              <button style={closeButtonStyle} onClick={() => onCloseAgenda(selectedAgenda.id)}>
+                투표 마감
+              </button>
+            )}
+          </div>
           {selectedAgenda.options.map((option: Option) => (
             <VoteOption
               key={option.id}

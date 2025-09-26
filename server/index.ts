@@ -2,6 +2,7 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import { connectToServer } from './db/conn';
 import agendaRouter from './routes/agendas'; // 별도 라우터 사용 시
 
 const app = express();
@@ -40,6 +41,10 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => {
-  console.log(`서버가 실행 중입니다 (포트: ${PORT})`);
+
+// MongoDB 연결 후 서버 시작
+connectToServer().then(() => {
+  server.listen(PORT, () => {
+    console.log(`서버가 실행 중입니다 (포트: ${PORT})`);
+  });
 });

@@ -5,8 +5,37 @@
     "options": [
       { "id": "opt1", "text": "회의실 A" },
       { "id": "opt2", "text": "회의실 B" },
-      { "id": "opt3", "text": "회식 장소" }
+      { "id": "opt3", "text": "온라인 (Zoom)" }
     ],
     "isActive": true
+  },
+  {
+    "id": "agenda2",
+    "title": "오늘 점심 메뉴 정하기",
+    "options": [
+      { "id": "opt4", "text": "한식 (김치찌개)" },
+      { "id": "opt5", "text": "중식 (짜장면)" },
+      { "id": "opt6", "text": "일식 (초밥)" }
+    ],
+    "isActive": true
+  },
+  {
+    "id": "agenda3",
+    "title": "사무실 커피 원두 종류",
+    "options": [
+      { "id": "opt7", "text": "브라질 산토스 (고소한 맛)" },
+      { "id": "opt8", "text": "에티오피아 예가체프 (산미)" },
+      { "id": "opt9", "text": "콜롬비아 수프리모 (마일드)" }
+    ],
+    "isActive": true
+  },
+  {
+    "id": "agenda4",
+    "title": "다음 분기 워크샵 주제",
+    "options": [
+      { "id": "opt10", "text": "AI 활용 업무 자동화" },
+      { "id": "opt11", "text": "팀워크 및 소통 강화" }
+    ],
+    "isActive": false
   }
 ]

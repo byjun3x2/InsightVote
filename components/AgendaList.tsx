@@ -1,6 +1,7 @@
 import React from 'react';
 import { Agenda, Option } from '../utils/types';
 import VoteOption from './VoteOption';
+import AgendaCard from './AgendaCard';
 
 interface Props {
   agendas: Agenda[];
@@ -17,32 +18,34 @@ const AgendaList: React.FC<Props> = ({
                                        selectedOptionId,
                                        onSelectOption,
                                      }) => {
+  const selectedAgenda = agendas.find((a) => a.id === selectedAgendaId);
+
   return (
     <div>
-      <label>투표할 안건 선택:</label>
-      <select value={selectedAgendaId} onChange={(e) => onSelectAgenda(e.target.value)}>
-        <option value="">선택하세요</option>
+      <h2>투표할 안건 선택:</h2>
+      <div>
         {agendas.map((agenda) => (
-          <option key={agenda.id} value={agenda.id}>
-            {agenda.title}
-          </option>
+          <AgendaCard
+            key={agenda.id}
+            agenda={agenda}
+            isSelected={agenda.id === selectedAgendaId}
+            onSelect={onSelectAgenda}
+          />
         ))}
-      </select>
+      </div>
 
-      {selectedAgendaId && (
-        <div>
-          <h2>선택지</h2>
-          {agendas
-            .find((a) => a.id === selectedAgendaId)
-            ?.options.map((option: Option) => (
-              <VoteOption
-                key={option.id}
-                optionId={option.id}
-                optionText={option.text}
-                selected={selectedOptionId === option.id}
-                onChange={onSelectOption}
-              />
-            ))}
+      {selectedAgenda && (
+        <div style={{ marginTop: '2rem' }}>
+          <h2>{selectedAgenda.title}: 선택지</h2>
+          {selectedAgenda.options.map((option: Option) => (
+            <VoteOption
+              key={option.id}
+              optionId={option.id}
+              optionText={option.text}
+              selected={selectedOptionId === option.id}
+              onChange={onSelectOption}
+            />
+          ))}
         </div>
       )}
     </div>

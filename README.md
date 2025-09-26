@@ -14,3 +14,8 @@ echo "nodeLinker: pnp" > .yarnrc.yml
 
 ## 필요한 기본 패키지 초기화 (package.json 생성)
 yarn init -y
+
+## Webstorm YarnBerry 설정
+yarn add @yarnpkg/sdks -D
+## VSCode YarnBerry 설정
+yarn dlx @yarnpkg/sdks vscode

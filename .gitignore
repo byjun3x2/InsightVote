@@ -1,5 +1,9 @@
 .idea/
 
+# NextJS
+.next
+.yarn
+
 # Yarn Berry PnP 관련
 .yarn/cache
 .yarn/build-state.yml

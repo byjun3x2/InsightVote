@@ -4,18 +4,18 @@ import { io, Socket } from 'socket.io-client';
 let socket: Socket;
 
 const Home: React.FC = () => {
-  const [message, setMessage] = useState('');
-  const [chat, setChat] = useState<string[]>([]);
+  const [vote, setVote] = useState('');
+  const [results, setResults] = useState<any[]>([]);
 
   useEffect(() => {
     socket = io('http://localhost:4000');
 
     socket.on('connect', () => {
-      console.log('Socket.IO 연결됨:', socket.id);
+      console.log('서버 연결됨:', socket.id);
     });
 
-    socket.on('message', (msg: string) => {
-      setChat((prev) => [...prev, msg]);
+    socket.on('voteUpdate', (updatedVoteData) => {
+      setResults((prev) => [...prev, updatedVoteData]);
     });
 
     return () => {
@@ -23,30 +23,30 @@ const Home: React.FC = () => {
     };
   }, []);
 
-  const sendMessage = () => {
-    if (message.trim() !== '') {
-      socket.emit('message', message);
-      setMessage('');
+  const submitVote = () => {
+    if (vote.trim()) {
+      socket.emit('voteSubmit', { choice: vote, timestamp: Date.now() });
+      setVote('');
     }
   };
 
   return (
     <div style={{ padding: '1rem' }}>
-      <h1>InsightVote Socket.IO 테스트</h1>
-      <div style={{ marginBottom: '1rem' }}>
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="메시지 입력"
-        />
-        <button onClick={sendMessage}>전송</button>
-      </div>
+      <h1>투표 제출 및 실시간 업데이트 로직 구현</h1>
+      <input
+        type="text"
+        value={vote}
+        onChange={(e) => setVote(e.target.value)}
+        placeholder="투표 선택 입력"
+      />
+      <button onClick={submitVote}>투표 제출</button>
       <div>
-        <h3>채팅 로그</h3>
+        <h3>실시간 투표 결과</h3>
         <ul>
-          {chat.map((msg, idx) => (
-            <li key={idx}>{msg}</li>
+          {results.map((res, idx) => (
+            <li key={idx}>
+              선택: {res.choice} - 시간: {new Date(res.timestamp).toLocaleTimeString()}
+            </li>
           ))}
         </ul>
       </div>

@@ -206,6 +206,7 @@ const Home: React.FC = () => {
           onSelectAgenda={handleSelectAgenda}
           selectedOptionId={selectedOptionId}
           onSelectOption={setSelectedOptionId}
+          onSubmitVote={submitVote}
           onCloseAgenda={handleCloseAgenda}
           onDeleteAgenda={handleDeleteAgenda}
           onTimerComplete={handleCloseAgenda}
@@ -213,10 +214,6 @@ const Home: React.FC = () => {
           results={allVotes}
           allUsers={allUsers}
         />
-
-        <button onClick={submitVote} disabled={!selectedOptionId}>
-          투표 제출
-        </button>
 
         <ResultChart results={liveVotes} agendas={agendas} allUsers={allUsers} />
       </div>

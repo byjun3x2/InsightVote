@@ -1,7 +1,7 @@
 import React from 'react';
-import { Agenda, User } from '../utils/types';
+import { Agenda, Option, User, VoteResult } from '../utils/types';
 import Timer from './Timer';
-
+import VoteSummaryChart from './VoteSummaryChart';
 
 interface Props {
   agenda: Agenda;
@@ -11,19 +11,35 @@ interface Props {
   currentUserId: string;
   onTimerComplete: (id: string) => void;
   allUsers: User[];
+  selectedOptionId: string;
+  onSelectOption: (id:string) => void;
+  onSubmitVote: () => void;
+  results: VoteResult[];
 }
 
-const AgendaCard: React.FC<Props> = ({ agenda, isSelected, onSelect, onDelete, currentUserId, onTimerComplete, allUsers }) => {
+const AgendaCard: React.FC<Props> = ({
+  agenda,
+  isSelected,
+  onSelect,
+  onDelete,
+  currentUserId,
+  onTimerComplete,
+  allUsers,
+  selectedOptionId,
+  onSelectOption,
+  onSubmitVote,
+  results,
+}) => {
   const cardStyle: React.CSSProperties = {
     position: 'relative',
     padding: '1rem',
     border: isSelected ? '2px solid dodgerblue' : '1px solid #ccc',
     borderRadius: '8px',
     marginBottom: '1rem',
-    cursor: agenda.isActive ? 'pointer' : 'not-allowed',
-    opacity: agenda.isActive ? 1 : 0.5,
+    cursor: 'pointer',
+    opacity: agenda.isActive ? 1 : 0.7,
     transition: 'border-color 0.2s, opacity 0.2s',
-    minHeight: '160px', // 우측 컨트롤 UI를 모두 담을 수 있는 최소 높이
+    backgroundColor: isSelected ? '#f8f9fa' : 'white',
   };
 
   const rightControlsStyle: React.CSSProperties = {
@@ -60,41 +76,81 @@ const AgendaCard: React.FC<Props> = ({ agenda, isSelected, onSelect, onDelete, c
   };
 
   const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation(); // 카드의 onSelect가 실행되는 것을 방지
+    e.stopPropagation();
     onDelete(agenda.id);
   };
 
   const creator = allUsers.find(u => u.id === agenda.creatorId);
 
+  // 마감된 안건의 투표 결과 계산
+  const renderVoteSummary = () => {
+    const agendaVotes = results.filter(r => r.agendaId === agenda.id);
+    const voteData = agendaVotes.reduce((acc, vote) => {
+      acc[vote.optionId] = (acc[vote.optionId] || 0) + 1;
+      return acc;
+    }, {} as { [optionId: string]: number });
+
+    return (
+      <div style={{ marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem' }} onClick={(e) => e.stopPropagation()}>
+        <VoteSummaryChart 
+          options={agenda.options} 
+          voteData={voteData} 
+          totalVotes={agendaVotes.length} 
+        />
+      </div>
+    );
+  };
+
   return (
     <div style={cardStyle} onClick={handleSelect}>
-      <div style={{ paddingRight: '100px' }}> {/* 컨트롤 UI 공간 확보 */}
+      <div style={{ paddingRight: '100px' }}>
         <h3>{agenda.title}</h3>
         <div style={{ fontSize: '0.9rem', color: '#555', marginTop: '0.5rem' }}>
           <p style={{ margin: 0, fontWeight: 'bold' }}>
             제안자: {creator?.name || '(알 수 없음)'}
           </p>
-          {(agenda.voteLimit && agenda.voteLimit > 0) ? (
-            <p style={{ margin: '0.5rem 0 0 0' }}>
-              투표 현황: {agenda.voteCount}명 / {agenda.voteLimit}명
-            </p>
-          ) : (
-            <p style={{ margin: '0.5rem 0 0 0' }}>
-              총 투표: {agenda.voteCount}명
-            </p>
-          )}
-          {agenda.startTime && (
-            <p style={{ margin: '0.25rem 0 0 0' }}>
-              시작: {new Date(agenda.startTime).toLocaleString('ko-KR')}
-            </p>
-          )}
-          {agenda.deadline && (
-            <p style={{ margin: '0.25rem 0 0 0' }}>
-              마감: {new Date(agenda.deadline).toLocaleString('ko-KR')}
-            </p>
-          )}
+          <p style={{ margin: '0.5rem 0 0 0' }}>
+            총 투표: {agenda.voteCount}명
+            {agenda.voteLimit && agenda.voteLimit > 0 ? ` / ${agenda.voteLimit}명` : ''}
+          </p>
+          {agenda.startTime && <p style={{ margin: '0.25rem 0 0 0' }}>시작: {new Date(agenda.startTime).toLocaleString('ko-KR')}</p>}
+          {agenda.deadline && <p style={{ margin: '0.25rem 0 0 0' }}>마감: {new Date(agenda.deadline).toLocaleString('ko-KR')}</p>}
         </div>
       </div>
+
+      {/* 선택되었을 때 상세 내용 표시 */}
+      {isSelected && (
+        agenda.isActive ? (
+          // 활성 안건: 투표 옵션 표시
+          <div style={{ marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem' }} onClick={(e) => e.stopPropagation()}>
+            {agenda.options.map((option: Option) => (
+              <div key={option.id} style={{ padding: '0.25rem 0' }}>
+                <label style={{ cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name={`agenda-options-${agenda.id}`}
+                    value={option.id}
+                    checked={selectedOptionId === option.id}
+                    onChange={() => onSelectOption(option.id)}
+                    style={{ marginRight: '0.5rem' }}
+                  />
+                  {option.text}
+                </label>
+              </div>
+            ))}
+            <button
+              onClick={onSubmitVote}
+              disabled={!selectedOptionId}
+              style={{ marginTop: '1rem', padding: '0.5rem 1rem', cursor: 'pointer' }}
+            >
+              투표하기
+            </button>
+          </div>
+        ) : (
+          // 마감된 안건: 결과 차트 표시
+          renderVoteSummary()
+        )
+      )}
 
       <div style={rightControlsStyle}>
         <span style={statusBadgeStyle}>{agenda.isActive ? '진행중' : '마감'}</span>
@@ -111,9 +167,7 @@ const AgendaCard: React.FC<Props> = ({ agenda, isSelected, onSelect, onDelete, c
           <button style={deleteButtonStyle} onClick={handleDelete}>
             삭제
           </button>
-        ) : (
-          <div></div> // 삭제 버튼 공간을 차지하기 위한 빈 div
-        )}
+        ) : <div />}
       </div>
     </div>
   );

@@ -20,6 +20,7 @@ const Home: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [filterTag, setFilterTag] = useState<string | null>(null); // 필터 태그 상태 추가
   const socketRef = useRef<Socket | null>(null);
   const { isAuthenticated, token, user, loading } = useAuth();
   const router = useRouter();
@@ -33,7 +34,11 @@ const Home: React.FC = () => {
   }, [isAuthenticated, loading, router]);
 
   const fetchAgendas = () => {
-    fetch(`${API_BASE_URL}/api/agendas`, {
+    let url = `${API_BASE_URL}/api/agendas`;
+    if (filterTag) {
+      url += `?tag=${filterTag}`;
+    }
+    fetch(url, {
       headers: { 'Authorization': `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -62,10 +67,16 @@ const Home: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated) {
       fetchAgendas();
+    }
+  }, [isAuthenticated, token, filterTag]); // filterTag가 변경될 때마다 안건을 다시 불러옴
+
+  useEffect(() => {
+    if (isAuthenticated) {
       fetchUsers();
       fetchResults();
     }
   }, [isAuthenticated, token]);
+
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
@@ -124,6 +135,14 @@ const Home: React.FC = () => {
     }
   };
 
+  const handleTagClick = (tag: string) => {
+    setFilterTag(tag);
+  };
+
+  const clearFilter = () => {
+    setFilterTag(null);
+  };
+
   const submitVote = () => {
     if (selectedOptionId && selectedAgendaId && socketRef.current) {
       socketRef.current.emit('voteSubmit', {
@@ -149,7 +168,7 @@ const Home: React.FC = () => {
     }
   };
 
-  const handleCreateAgenda = async (data: { title: string; options: { text: string }[]; startTime?: string; deadline?: string; voteLimit?: number }) => {
+  const handleCreateAgenda = async (data: { title: string; options: { text: string }[]; tags?: string[]; startTime?: string; deadline?: string; voteLimit?: number }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/agendas`, {
         method: 'POST',
@@ -200,10 +219,21 @@ const Home: React.FC = () => {
               onCancel={() => setShowCreateForm(false)}
             />
           )}
+
+          {filterTag && (
+            <div style={{ marginBottom: '1rem' }}>
+              <span style={{ fontWeight: 'bold' }}>Filtering by: #{filterTag}</span>
+              <button onClick={clearFilter} style={{ marginLeft: '1rem', cursor: 'pointer' }}>
+                Clear Filter
+              </button>
+            </div>
+          )}
+
           <AgendaList
             agendas={agendas}
             selectedAgendaId={selectedAgendaId}
             onSelectAgenda={handleSelectAgenda}
+            onTagClick={handleTagClick}
             selectedOptionId={selectedOptionId}
             onSelectOption={setSelectedOptionId}
             onSubmitVote={submitVote}

@@ -8,6 +8,7 @@ interface Props {
   isSelected: boolean;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  onTagClick: (tag: string) => void;
   currentUserId: string;
   onTimerComplete: (id: string) => void;
   allUsers: User[];
@@ -22,6 +23,7 @@ const AgendaCard: React.FC<Props> = ({
   isSelected,
   onSelect,
   onDelete,
+  onTagClick,
   currentUserId,
   onTimerComplete,
   allUsers,
@@ -40,19 +42,17 @@ const AgendaCard: React.FC<Props> = ({
     opacity: agenda.isActive ? 1 : 0.7,
     transition: 'border-color 0.2s, opacity 0.2s',
     backgroundColor: isSelected ? '#f8f9fa' : 'white',
-    minHeight: '200px', // 컨트롤 UI가 겹치지 않도록 최소 높이 확보
+    minHeight: '200px',
   };
 
-  // 모든 컨트롤을 담는 우측의 넓은 부모 컨테이너
   const globalControlsContainer: React.CSSProperties = {
     position: 'absolute',
     top: '1rem',
     right: '0.1rem',
-    width: '150px', // 전체 컨트롤이 들어갈 넓이
-    height: 'calc(100% - 2rem)', // 카드 높이에 맞춤
+    width: '150px',
+    height: 'calc(100% - 2rem)',
   };
 
-  // 뱃지, 삭제 버튼 그룹 (컨테이너의 좌측에 위치)
   const actionControlsStyle: React.CSSProperties = {
     position: 'absolute',
     right:5,
@@ -62,7 +62,6 @@ const AgendaCard: React.FC<Props> = ({
     gap: '9rem',
   };
 
-  // 타이머 그룹 (컨테이너의 우측에 위치)
   const timerContainerStyle: React.CSSProperties = {
     position: 'absolute',
     right: 10,
@@ -90,6 +89,18 @@ const AgendaCard: React.FC<Props> = ({
     boxSizing: 'border-box',
   };
 
+  const tagStyle: React.CSSProperties = {
+    display: 'inline-block',
+    padding: '0.2rem 0.5rem',
+    backgroundColor: '#e9ecef',
+    color: '#495057',
+    borderRadius: '12px',
+    fontSize: '0.75rem',
+    marginRight: '0.4rem',
+    marginTop: '0.5rem',
+    cursor: 'pointer',
+  };
+
   const handleSelect = () => {
     onSelect(agenda.id);
   };
@@ -97,6 +108,11 @@ const AgendaCard: React.FC<Props> = ({
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete(agenda.id);
+  };
+
+  const handleTagClick = (e: React.MouseEvent, tag: string) => {
+    e.stopPropagation();
+    onTagClick(tag);
   };
 
   const creator = allUsers.find(u => u.id === agenda.creatorId);
@@ -123,6 +139,11 @@ const AgendaCard: React.FC<Props> = ({
     <div style={cardStyle} onClick={handleSelect}>
       <div style={{ paddingRight: '160px' }}>
         <h3>{agenda.title}</h3>
+        <div>
+          {agenda.tags && agenda.tags.map(tag => (
+            <span key={tag} style={tagStyle} onClick={(e) => handleTagClick(e, tag)}>#{tag}</span>
+          ))}
+        </div>
         <div style={{ fontSize: '0.9rem', color: '#555', marginTop: '0.5rem' }}>
           <p style={{ margin: 0, fontWeight: 'bold' }}>
             제안자: {creator?.name || '(알 수 없음)'}
@@ -168,7 +189,6 @@ const AgendaCard: React.FC<Props> = ({
       )}
 
       <div style={globalControlsContainer}>
-        {/* Action Controls: Badge and Delete Button (Aligned Left) */}
         <div style={actionControlsStyle}>
           <span style={statusBadgeStyle}>{agenda.isActive ? '진행중' : '마감'}</span>
           {currentUserId === agenda.creatorId && (
@@ -178,7 +198,6 @@ const AgendaCard: React.FC<Props> = ({
           )}
         </div>
 
-        {/* Timer Control (Aligned Right) */}
         {agenda.isActive && agenda.startTime && agenda.deadline && (
           <div style={timerContainerStyle}>
             <Timer
@@ -191,9 +210,6 @@ const AgendaCard: React.FC<Props> = ({
       </div>
     </div>
   );
-
-
-
 };
 
 export default AgendaCard;

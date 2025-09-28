@@ -16,6 +16,13 @@ router.get('/', async (req, res) => {
   try {
     const db = getDb();
 
+    const { tag } = req.query;
+    const filter: any = {};
+
+    if (tag) {
+      filter.tags = tag;
+    }
+
     // 마감 시간이 지났지만 여전히 활성 상태인 안건들을 찾아 비활성화시킵니다.
     const now = new Date();
     await db.collection(collectionName).updateMany(
@@ -24,6 +31,7 @@ router.get('/', async (req, res) => {
     );
 
     const agendas = await db.collection(collectionName).aggregate([
+      { $match: filter }, // 태그 필터링
       {
         $lookup: {
           from: 'votes',
@@ -58,7 +66,7 @@ router.get('/', async (req, res) => {
 router.post('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const db = getDb();
-    const { title, options, deadline, voteLimit, startTime } = req.body;
+    const { title, options, deadline, voteLimit, startTime, tags } = req.body;
     const creatorId = req.user?.userId;
 
     if (!title || !options) {
@@ -74,6 +82,7 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
       deadline,
       voteLimit,
       creatorId: new ObjectId(creatorId),
+      tags: tags || [], // 태그가 없으면 빈 배열로 저장
     };
 
     const result = await db.collection(collectionName).insertOne(newAgenda);

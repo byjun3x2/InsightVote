@@ -15,6 +15,7 @@ export interface Agenda {
   voteLimit?: number;
   voteCount?: number;
   creatorId: string;
+  tags?: string[];
 }
 
 export interface VoteResult {

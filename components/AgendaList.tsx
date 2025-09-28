@@ -6,6 +6,7 @@ interface Props {
   agendas: Agenda[];
   selectedAgendaId: string;
   onSelectAgenda: (id: string) => void;
+  onTagClick: (tag: string) => void; // 태그 클릭 핸들러 추가
   selectedOptionId: string;
   onSelectOption: (id: string) => void;
   onSubmitVote: () => void;
@@ -21,6 +22,7 @@ const AgendaList: React.FC<Props> = ({
   agendas,
   selectedAgendaId,
   onSelectAgenda,
+  onTagClick, // props 받기
   selectedOptionId,
   onSelectOption,
   onSubmitVote,
@@ -42,6 +44,7 @@ const AgendaList: React.FC<Props> = ({
             isSelected={agenda.id === selectedAgendaId}
             onSelect={onSelectAgenda}
             onDelete={onDeleteAgenda}
+            onTagClick={onTagClick} // AgendaCard로 전달
             currentUserId={currentUserId}
             onTimerComplete={onCloseAgenda} // 타이머 완료 시 마감 처리
             allUsers={allUsers}

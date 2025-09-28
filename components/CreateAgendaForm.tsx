@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 
 interface Props {
-  onSubmit: (data: { title: string; options: { text: string }[]; startTime?: string; deadline?: string; voteLimit?: number }) => void;
+  onSubmit: (data: { title: string; options: { text: string }[]; tags?: string[]; startTime?: string; deadline?: string; voteLimit?: number }) => void;
   onCancel: () => void;
 }
 
 const CreateAgendaForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
   const [title, setTitle] = useState('');
+  const [tags, setTags] = useState(''); // 태그 상태 추가
   const [options, setOptions] = useState([{ text: '' }, { text: '' }]);
   const [startTime, setStartTime] = useState('');
   const [deadline, setDeadline] = useState('');
@@ -30,10 +31,13 @@ const CreateAgendaForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const validOptions = options.filter(opt => opt.text.trim() !== '');
+    const processedTags = tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+
     if (title.trim() && validOptions.length >= 2) {
       onSubmit({ 
         title, 
         options: validOptions, 
+        tags: processedTags,
         startTime,
         deadline, 
         voteLimit: voteLimit ? parseInt(voteLimit, 10) : undefined 
@@ -74,6 +78,13 @@ const CreateAgendaForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
         onChange={(e) => setTitle(e.target.value)}
         style={inputStyle}
         required
+      />
+      <input
+        type="text"
+        placeholder="해시태그 (쉼표로 구분)"
+        value={tags}
+        onChange={(e) => setTags(e.target.value)}
+        style={inputStyle}
       />
       <h4>선택지 (최소 2개)</h4>
       {options.map((option, index) => (

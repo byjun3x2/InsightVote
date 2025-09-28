@@ -36,7 +36,7 @@ const AgendaList: React.FC<Props> = ({
   return (
     <div>
       <h2>투표할 안건 선택:</h2>
-      <div>
+      <div className="agenda-grid">
         {agendas.map((agenda) => (
           <AgendaCard
             key={agenda.id}

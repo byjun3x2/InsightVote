@@ -136,7 +136,7 @@ const AgendaCard: React.FC<Props> = ({
   };
 
   return (
-    <div style={cardStyle} onClick={handleSelect}>
+    <div style={cardStyle} className={isSelected ? 'agenda-card-selected' : ''} onClick={handleSelect}>
       <div style={{ paddingRight: '160px' }}>
         <h3>{agenda.title}</h3>
         <div>

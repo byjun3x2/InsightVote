@@ -24,3 +24,29 @@ button:disabled {
   background-color: #999;
   cursor: not-allowed;
 }
+
+/* 반응형 안건 그리드 */
+.agenda-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* 모바일 기본 1열 */
+  gap: 1rem; /* 카드 사이의 간격 */
+}
+
+/* 태블릿 (768px 이상) */
+@media (min-width: 768px) {
+  .agenda-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2열 */
+  }
+}
+
+/* 데스크탑 (1200px 이상) */
+@media (min-width: 1200px) {
+  .agenda-grid {
+    grid-template-columns: repeat(3, 1fr); /* 3열 */
+  }
+}
+
+/* 선택된 안건 카드에 대한 호버 효과 */
+.agenda-card-selected:hover {
+  background-color: #e9ecef !important; /* 인라인 스타일에 우선 적용 */
+}

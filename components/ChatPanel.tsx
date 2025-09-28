@@ -85,11 +85,28 @@ const ChatPanel: React.FC<Props> = ({ agenda, messages, onSendMessage, isOpen, o
     };
   };
 
+  const closeButtonStyle: React.CSSProperties = {
+    background: 'none',
+    border: 'none',
+    fontSize: '1.5rem',
+    cursor: 'pointer',
+    padding: '0.5rem',
+    lineHeight: 1,
+  };
+
+
   return (
     <div style={panelStyle}>
       <div style={headerStyle}>
         <h5 style={{ margin: 0 }}>{agenda?.title || '채팅'}</h5>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>&times;</button>
+        <button 
+          onClick={onClose} 
+          style={closeButtonStyle}
+          onMouseEnter={(e) => e.currentTarget.style.color = '#007bff'}
+          onMouseLeave={(e) => e.currentTarget.style.color = '#000'}
+        >
+          &times;
+        </button>
       </div>
       <div style={messageListStyle}>
         {messages.map((msg) => (

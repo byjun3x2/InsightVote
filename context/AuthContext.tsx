@@ -1,18 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/router';
-
-interface User {
-  userId: string;
-  username: string;
-  name: string;
-  email: string;
-}
+import { User } from '../utils/types'; // 중앙 User 타입 import
 
 interface AuthContextType {
   token: string | null;
   user: User | null;
   loading: boolean;
-  login: (token: string, user: User) => void;
+  login: (token: string, user: any) => void; // user 타입을 any로 하여 유연하게 받음
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -26,7 +20,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    // 앱이 로드될 때 localStorage에서 토큰을 확인하여 로그인 상태를 유지합니다.
     try {
       const storedToken = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
@@ -41,11 +34,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const login = (newToken: string, newUser: User) => {
+  const login = (newToken: string, userData: { userId: string, username: string, name: string, email: string }) => {
+    // API 응답(userId)을 표준 User 타입(id)으로 변환
+    const userForState: User = {
+      id: userData.userId,
+      username: userData.username,
+      name: userData.name,
+      email: userData.email,
+    };
+
     setToken(newToken);
-    setUser(newUser);
+    setUser(userForState);
     localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(newUser));
+    localStorage.setItem('user', JSON.stringify(userForState));
     router.push('/');
   };
 

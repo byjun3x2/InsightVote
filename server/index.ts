@@ -40,7 +40,7 @@ io.use((socket, next) => {
 });
 
 // CORS 미들웨어 설정
-app.use(cors({ origin: ['http://localhost:3000', 'http://192.168.35.103:3000'] }));
+app.use(cors());
 
 app.use(express.json());
 
@@ -131,6 +131,41 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('클라이언트 연결 해제:', socket.id);
+  });
+
+  // 채팅방 입장
+  socket.on('joinRoom', (agendaId) => {
+    socket.join(agendaId);
+    console.log(`Socket ${socket.id} joined room ${agendaId}`);
+  });
+
+  // 채팅방 퇴장
+  socket.on('leaveRoom', (agendaId) => {
+    socket.leave(agendaId);
+    console.log(`Socket ${socket.id} left room ${agendaId}`);
+  });
+
+  // 채팅 메시지 수신 및 브로드캐스트
+  socket.on('chatMessage', (data) => {
+    const { agendaId, message } = data;
+    const user = socket.data.user;
+
+    if (!user) {
+      return; // 인증되지 않은 사용자
+    }
+
+    const messagePayload = {
+      id: new ObjectId().toHexString(), // 고유 메시지 ID
+      message,
+      sender: {
+        id: user.userId,
+        name: user.name,
+      },
+      timestamp: new Date(),
+    };
+
+    io.to(agendaId).emit('chatMessage', messagePayload);
+    console.log(`Message sent to room ${agendaId}:`, messagePayload);
   });
 });
 

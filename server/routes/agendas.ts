@@ -131,10 +131,24 @@ router.delete('/:id', authenticateToken, async (req: AuthenticatedRequest, res) 
       return res.status(404).send('Agenda not found');
     }
 
+    // 소유권 확인 디버깅
+    console.log('--- Deleting Agenda ---');
+    console.log('Agenda Creator ID (type):', typeof agenda.creatorId, agenda.creatorId);
+    console.log('User ID from Token (type):', typeof userId, userId);
+    
+    if (agenda.creatorId && typeof agenda.creatorId.toHexString === 'function') {
+      console.log('Agenda Creator ID (string):', agenda.creatorId.toHexString());
+    }
+
+
     // 소유권 확인
     if (agenda.creatorId.toHexString() !== userId) {
+      console.log('Ownership check FAILED.');
       return res.status(403).send('Forbidden: You do not own this agenda');
     }
+    
+    console.log('Ownership check PASSED.');
+
 
     await db.collection(collectionName).deleteOne({ _id: new ObjectId(id) });
     // 관련된 투표도 삭제

@@ -31,3 +31,13 @@ export interface User {
   email: string;
   password?: string; // 비밀번호는 프론트엔드로 전달되지 않도록 optional 처리
 }
+
+export interface ChatMessage {
+  id: string;
+  message: string;
+  sender: {
+    id: string;
+    name: string;
+  };
+  timestamp: string;
+}

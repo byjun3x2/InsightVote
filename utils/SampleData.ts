@@ -10,5 +10,6 @@ export const sampleAgendas: Agenda[] = [
       { id: 'opt3', text: '회식 장소' },
     ],
     isActive: true,
+    creatorId: 'sample-user-id', // 샘플 생성자 ID 추가
   },
 ];

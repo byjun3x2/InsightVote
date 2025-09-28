@@ -1,13 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { Agenda, VoteResult } from '../utils/types';
+import { Agenda, VoteResult, User, ChatMessage } from '../utils/types';
 import AgendaList from '../components/AgendaList';
 import ResultChart from '../components/ResultChart';
 import CreateAgendaForm from '../components/CreateAgendaForm';
-
+import ChatPanel from '../components/ChatPanel';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/router';
 import Header from '../components/Header';
+
+const API_BASE_URL = 'http://192.168.35.103:4000'; // <-- 이 주소를 실제 IP로 변경하세요
 
 const Home: React.FC = () => {
   const [agendas, setAgendas] = useState<Agenda[]>([]);
@@ -17,9 +19,11 @@ const Home: React.FC = () => {
   const [liveVotes, setLiveVotes] = useState<VoteResult[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const socketRef = useRef<Socket | null>(null);
   const { isAuthenticated, token, user, loading } = useAuth();
   const router = useRouter();
+  const previousAgendaIdRef = useRef<string | undefined>(undefined);
 
   // 페이지 접근 제어
   useEffect(() => {
@@ -29,11 +33,8 @@ const Home: React.FC = () => {
   }, [isAuthenticated, loading, router]);
 
   const fetchAgendas = () => {
-    fetch('http://localhost:4000/api/agendas', {
-      headers: {
-        // API 요청 시 인증 토큰 추가
-        'Authorization': `Bearer ${token}`,
-      },
+    fetch(`${API_BASE_URL}/api/agendas`, {
+      headers: { 'Authorization': `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => setAgendas(data))
@@ -41,10 +42,8 @@ const Home: React.FC = () => {
   };
 
   const fetchUsers = () => {
-    fetch('http://localhost:4000/api/users', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+    fetch(`${API_BASE_URL}/api/users`, {
+      headers: { 'Authorization': `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => setAllUsers(data))
@@ -52,10 +51,8 @@ const Home: React.FC = () => {
   };
 
   const fetchResults = () => {
-    fetch('http://localhost:4000/api/votes', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+    fetch(`${API_BASE_URL}/api/votes`, {
+      headers: { 'Authorization': `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => setAllVotes(data))
@@ -68,46 +65,63 @@ const Home: React.FC = () => {
       fetchUsers();
       fetchResults();
     }
-  }, [isAuthenticated, token]); // isAuthenticated와 token이 준비되면 fetch 실행
+  }, [isAuthenticated, token]);
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
 
-    // 이전 소켓 연결이 있다면 해제
     if (socketRef.current) {
       socketRef.current.disconnect();
     }
 
-    // 인증 토큰과 함께 새 소켓 연결
-    socketRef.current = io('http://localhost:4000', {
-      auth: {
-        token,
-      },
-    });
+    socketRef.current = io(API_BASE_URL, { auth: { token } });
 
     socketRef.current.on('connect', () => {
       console.log('서버에 연결됨:', socketRef.current?.id);
     });
 
     socketRef.current.on('voteUpdate', (voteData) => {
-      // 실시간 결과 목록에 추가
       setLiveVotes((prev) => [...prev, voteData]);
-      // 전체 결과 목록에도 추가하여 집계 데이터 일관성 유지
       setAllVotes((prev) => [...prev, voteData]);
-
-      // 버그 수정을 위해 안건 목록 전체를 다시 불러옵니다.
       fetchAgendas();
     });
 
-    // 컴포넌트 언마운트 시 소켓 연결 해제
+    socketRef.current.on('chatMessage', (message: ChatMessage) => {
+      setMessages((prevMessages) => [...prevMessages, message]);
+    });
+
     return () => {
       socketRef.current?.disconnect();
     };
-  }, [isAuthenticated, token]); // isAuthenticated와 token이 변경될 때마다 소켓 재연결
+  }, [isAuthenticated, token]);
 
   const handleSelectAgenda = (id: string) => {
-    setSelectedAgendaId(id);
-    setSelectedOptionId(''); // 안건 변경 시 선택된 옵션 초기화
+    const newSelectedId = selectedAgendaId === id ? '' : id;
+    setSelectedAgendaId(newSelectedId);
+    setSelectedOptionId('');
+  };
+
+  useEffect(() => {
+    const currentAgendaId = selectedAgendaId;
+    const previousAgendaId = previousAgendaIdRef.current;
+
+    if (socketRef.current) {
+      if (previousAgendaId) {
+        socketRef.current.emit('leaveRoom', previousAgendaId);
+      }
+      if (currentAgendaId) {
+        socketRef.current.emit('joinRoom', currentAgendaId);
+      }
+    }
+
+    setMessages([]); // 안건 변경 시 메시지 초기화
+    previousAgendaIdRef.current = currentAgendaId;
+  }, [selectedAgendaId]);
+
+  const handleSendMessage = (message: string) => {
+    if (socketRef.current && selectedAgendaId) {
+      socketRef.current.emit('chatMessage', { agendaId: selectedAgendaId, message });
+    }
   };
 
   const submitVote = () => {
@@ -117,7 +131,6 @@ const Home: React.FC = () => {
         optionId: selectedOptionId,
         timestamp: Date.now(),
       });
-
       setSelectedOptionId('');
       setSelectedAgendaId('');
     }
@@ -125,18 +138,12 @@ const Home: React.FC = () => {
 
   const handleCloseAgenda = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/agendas/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/agendas/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ isActive: false }),
       });
-
-      if (response.ok) {
-        fetchAgendas(); // 목록 새로고침
-      }
+      if (response.ok) fetchAgendas();
     } catch (e) {
       console.error('Error closing agenda:', e);
     }
@@ -144,18 +151,14 @@ const Home: React.FC = () => {
 
   const handleCreateAgenda = async (data: { title: string; options: { text: string }[]; startTime?: string; deadline?: string; voteLimit?: number }) => {
     try {
-      const response = await fetch('http://localhost:4000/api/agendas', {
+      const response = await fetch(`${API_BASE_URL}/api/agendas`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(data),
       });
-
       if (response.ok) {
-        fetchAgendas(); // 목록 새로고침
-        setShowCreateForm(false); // 폼 닫기
+        fetchAgendas();
+        setShowCreateForm(false);
       }
     } catch (e) {
       console.error('Error creating agenda:', e);
@@ -165,57 +168,62 @@ const Home: React.FC = () => {
   const handleDeleteAgenda = async (id: string) => {
     if (window.confirm('정말로 이 안건을 삭제하시겠습니까?')) {
       try {
-        const response = await fetch(`http://localhost:4000/api/agendas/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/agendas/${id}`, {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: { 'Authorization': `Bearer ${token}` },
         });
-
-        if (response.ok) {
-          fetchAgendas(); // 목록 새로고침
-        }
+        if (response.ok) fetchAgendas();
       } catch (e) {
         console.error('Error deleting agenda:', e);
       }
     }
   };
 
-  // 인증 상태 확인 전에는 렌더링하지 않음 (또는 로딩 스피너 표시)
   if (loading || !isAuthenticated) {
     return <div>Loading...</div>;
   }
 
+  const selectedAgenda = agendas.find(a => a.id === selectedAgendaId) || null;
+
   return (
     <div>
       <Header />
-      <div style={{ padding: '1rem' }}>
-        {!showCreateForm ? (
-          <button onClick={() => setShowCreateForm(true)} style={{ marginBottom: '1rem' }}>
-            새 안건 만들기
-          </button>
-        ) : (
-                  <CreateAgendaForm
-                    onSubmit={handleCreateAgenda}
-                    onCancel={() => setShowCreateForm(false)}
-                  />        )}
-
-        <AgendaList
-          agendas={agendas}
-          selectedAgendaId={selectedAgendaId}
-          onSelectAgenda={handleSelectAgenda}
-          selectedOptionId={selectedOptionId}
-          onSelectOption={setSelectedOptionId}
-          onSubmitVote={submitVote}
-          onCloseAgenda={handleCloseAgenda}
-          onDeleteAgenda={handleDeleteAgenda}
-          onTimerComplete={handleCloseAgenda}
-          currentUserId={isAuthenticated ? user?.userId : ''}
-          results={allVotes}
-          allUsers={allUsers}
+      <div style={{ display: 'flex' }}>
+        <div style={{ flex: 1, padding: '1rem', transition: 'margin-right 0.3s ease-in-out', marginRight: selectedAgendaId ? '350px' : '0' }}>
+          {!showCreateForm ? (
+            <button onClick={() => setShowCreateForm(true)} style={{ marginBottom: '1rem' }}>
+              새 안건 만들기
+            </button>
+          ) : (
+            <CreateAgendaForm
+              onSubmit={handleCreateAgenda}
+              onCancel={() => setShowCreateForm(false)}
+            />
+          )}
+          <AgendaList
+            agendas={agendas}
+            selectedAgendaId={selectedAgendaId}
+            onSelectAgenda={handleSelectAgenda}
+            selectedOptionId={selectedOptionId}
+            onSelectOption={setSelectedOptionId}
+            onSubmitVote={submitVote}
+            onCloseAgenda={handleCloseAgenda}
+            onDeleteAgenda={handleDeleteAgenda}
+            onTimerComplete={handleCloseAgenda}
+            currentUserId={user?.id || ''}
+            results={allVotes}
+            allUsers={allUsers}
+          />
+          <ResultChart results={liveVotes} agendas={agendas} allUsers={allUsers} />
+        </div>
+        <ChatPanel
+          agenda={selectedAgenda}
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          isOpen={!!selectedAgendaId}
+          onClose={() => setSelectedAgendaId('')}
+          currentUser={user}
         />
-
-        <ResultChart results={liveVotes} agendas={agendas} allUsers={allUsers} />
       </div>
     </div>
   );

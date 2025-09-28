@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 
+const API_BASE_URL = 'http://192.168.35.103:4000';
+
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -13,7 +15,7 @@ const LoginPage: React.FC = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:4000/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),

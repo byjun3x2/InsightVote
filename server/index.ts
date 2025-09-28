@@ -8,6 +8,7 @@ import { connectToServer } from './db/conn';
 import usersRouter from './routes/users';
 import authRouter from './routes/auth';
 import agendaRouter from './routes/agendas';
+import votesRouter from './routes/votes';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = 'your-super-secret-key-that-should-be-in-env';
@@ -39,7 +40,7 @@ io.use((socket, next) => {
 });
 
 // CORS 미들웨어 설정
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({ origin: ['http://localhost:3000', 'http://192.168.35.103:3000'] }));
 
 app.use(express.json());
 
@@ -47,6 +48,7 @@ app.use(express.json());
 app.use('/api/users', usersRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/agendas', agendaRouter);
+app.use('/api/votes', votesRouter);
 
 // Socket.IO 연결 및 이벤트 처리
 io.on('connection', (socket) => {

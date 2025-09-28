@@ -50,10 +50,22 @@ const Home: React.FC = () => {
       .catch(console.error);
   };
 
+  const fetchResults = () => {
+    fetch('http://localhost:4000/api/votes', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => setResults(data))
+      .catch(console.error);
+  };
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchAgendas();
       fetchUsers();
+      fetchResults();
     }
   }, [isAuthenticated, token]); // isAuthenticated와 token이 준비되면 fetch 실행
 

@@ -69,7 +69,7 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id, username: user.username, name: user.name, email: user.email },
+      { userId: user._id.toHexString(), username: user.username, name: user.name, email: user.email },
       JWT_SECRET,
       { expiresIn: '1h' } // 토큰 유효 시간: 1시간
     );

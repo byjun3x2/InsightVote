@@ -40,25 +40,43 @@ const AgendaCard: React.FC<Props> = ({
     opacity: agenda.isActive ? 1 : 0.7,
     transition: 'border-color 0.2s, opacity 0.2s',
     backgroundColor: isSelected ? '#f8f9fa' : 'white',
+    minHeight: '200px', // 컨트롤 UI가 겹치지 않도록 최소 높이 확보
   };
 
-  const rightControlsStyle: React.CSSProperties = {
+  // 모든 컨트롤을 담는 우측의 넓은 부모 컨테이너
+  const globalControlsContainer: React.CSSProperties = {
     position: 'absolute',
     top: '1rem',
-    right: '1rem',
-    bottom: '1rem',
+    right: '0.1rem',
+    width: '150px', // 전체 컨트롤이 들어갈 넓이
+    height: 'calc(100% - 2rem)', // 카드 높이에 맞춤
+  };
+
+  // 뱃지, 삭제 버튼 그룹 (컨테이너의 좌측에 위치)
+  const actionControlsStyle: React.CSSProperties = {
+    position: 'absolute',
+    right:5,
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: '9rem',
+  };
+
+  // 타이머 그룹 (컨테이너의 우측에 위치)
+  const timerContainerStyle: React.CSSProperties = {
+    position: 'absolute',
+    right: 10,
+    top: 40
   };
 
   const statusBadgeStyle: React.CSSProperties = {
-    padding: '0.25rem 0.5rem',
+    padding: '0.25rem 0.4rem',
     borderRadius: '12px',
     fontSize: '0.75rem',
     color: 'white',
     backgroundColor: agenda.isActive ? '#28a745' : '#6c757d',
+    textAlign: 'center',
+    boxSizing: 'border-box',
   };
 
   const deleteButtonStyle: React.CSSProperties = {
@@ -69,6 +87,7 @@ const AgendaCard: React.FC<Props> = ({
     borderRadius: '5px',
     cursor: 'pointer',
     fontSize: '0.75rem',
+    boxSizing: 'border-box',
   };
 
   const handleSelect = () => {
@@ -82,7 +101,6 @@ const AgendaCard: React.FC<Props> = ({
 
   const creator = allUsers.find(u => u.id === agenda.creatorId);
 
-  // 마감된 안건의 투표 결과 계산
   const renderVoteSummary = () => {
     const agendaVotes = results.filter(r => r.agendaId === agenda.id);
     const voteData = agendaVotes.reduce((acc, vote) => {
@@ -92,10 +110,10 @@ const AgendaCard: React.FC<Props> = ({
 
     return (
       <div style={{ marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem' }} onClick={(e) => e.stopPropagation()}>
-        <VoteSummaryChart 
-          options={agenda.options} 
-          voteData={voteData} 
-          totalVotes={agendaVotes.length} 
+        <VoteSummaryChart
+          options={agenda.options}
+          voteData={voteData}
+          totalVotes={agendaVotes.length}
         />
       </div>
     );
@@ -103,7 +121,7 @@ const AgendaCard: React.FC<Props> = ({
 
   return (
     <div style={cardStyle} onClick={handleSelect}>
-      <div style={{ paddingRight: '100px' }}>
+      <div style={{ paddingRight: '160px' }}>
         <h3>{agenda.title}</h3>
         <div style={{ fontSize: '0.9rem', color: '#555', marginTop: '0.5rem' }}>
           <p style={{ margin: 0, fontWeight: 'bold' }}>
@@ -118,10 +136,8 @@ const AgendaCard: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 선택되었을 때 상세 내용 표시 */}
       {isSelected && (
         agenda.isActive ? (
-          // 활성 안건: 투표 옵션 표시
           <div style={{ marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem' }} onClick={(e) => e.stopPropagation()}>
             {agenda.options.map((option: Option) => (
               <div key={option.id} style={{ padding: '0.25rem 0' }}>
@@ -147,30 +163,37 @@ const AgendaCard: React.FC<Props> = ({
             </button>
           </div>
         ) : (
-          // 마감된 안건: 결과 차트 표시
           renderVoteSummary()
         )
       )}
 
-      <div style={rightControlsStyle}>
-        <span style={statusBadgeStyle}>{agenda.isActive ? '진행중' : '마감'}</span>
-        
+      <div style={globalControlsContainer}>
+        {/* Action Controls: Badge and Delete Button (Aligned Left) */}
+        <div style={actionControlsStyle}>
+          <span style={statusBadgeStyle}>{agenda.isActive ? '진행중' : '마감'}</span>
+          {currentUserId === agenda.creatorId && (
+            <button style={deleteButtonStyle} onClick={handleDelete}>
+              삭제
+            </button>
+          )}
+        </div>
+
+        {/* Timer Control (Aligned Right) */}
         {agenda.isActive && agenda.startTime && agenda.deadline && (
-          <Timer 
-            startTime={agenda.startTime} 
-            deadline={agenda.deadline} 
-            onComplete={() => onTimerComplete && onTimerComplete(agenda.id)}
-          />
+          <div style={timerContainerStyle}>
+            <Timer
+              startTime={agenda.startTime}
+              deadline={agenda.deadline}
+              onComplete={() => onTimerComplete && onTimerComplete(agenda.id)}
+            />
+          </div>
         )}
-        
-        {currentUserId === agenda.creatorId ? (
-          <button style={deleteButtonStyle} onClick={handleDelete}>
-            삭제
-          </button>
-        ) : <div />}
       </div>
     </div>
   );
+
+
+
 };
 
 export default AgendaCard;

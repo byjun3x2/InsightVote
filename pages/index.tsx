@@ -13,7 +13,8 @@ const Home: React.FC = () => {
   const [agendas, setAgendas] = useState<Agenda[]>([]);
   const [selectedAgendaId, setSelectedAgendaId] = useState<string>('');
   const [selectedOptionId, setSelectedOptionId] = useState<string>('');
-  const [results, setResults] = useState<VoteResult[]>([]);
+  const [allVotes, setAllVotes] = useState<VoteResult[]>([]);
+  const [liveVotes, setLiveVotes] = useState<VoteResult[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const socketRef = useRef<Socket | null>(null);
@@ -57,7 +58,7 @@ const Home: React.FC = () => {
       },
     })
       .then((res) => res.json())
-      .then((data) => setResults(data))
+      .then((data) => setAllVotes(data))
       .catch(console.error);
   };
 
@@ -90,7 +91,9 @@ const Home: React.FC = () => {
 
     socketRef.current.on('voteUpdate', (voteData) => {
       // 실시간 결과 목록에 추가
-      setResults((prev) => [...prev, voteData]);
+      setLiveVotes((prev) => [...prev, voteData]);
+      // 전체 결과 목록에도 추가하여 집계 데이터 일관성 유지
+      setAllVotes((prev) => [...prev, voteData]);
 
       // 버그 수정을 위해 안건 목록 전체를 다시 불러옵니다.
       fetchAgendas();
@@ -207,7 +210,7 @@ const Home: React.FC = () => {
           onDeleteAgenda={handleDeleteAgenda}
           onTimerComplete={handleCloseAgenda}
           currentUserId={isAuthenticated ? user?.userId : ''}
-          results={results}
+          results={allVotes}
           allUsers={allUsers}
         />
 
@@ -215,7 +218,7 @@ const Home: React.FC = () => {
           투표 제출
         </button>
 
-        <ResultChart results={results} agendas={agendas} allUsers={allUsers} />
+        <ResultChart results={liveVotes} agendas={agendas} allUsers={allUsers} />
       </div>
     </div>
   );

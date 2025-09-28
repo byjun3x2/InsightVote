@@ -15,6 +15,14 @@ const collectionName = 'agendas';
 router.get('/', async (req, res) => {
   try {
     const db = getDb();
+
+    // 마감 시간이 지났지만 여전히 활성 상태인 안건들을 찾아 비활성화시킵니다.
+    const now = new Date();
+    await db.collection(collectionName).updateMany(
+      { isActive: true, deadline: { $ne: null, $lt: now } },
+      { $set: { isActive: false } }
+    );
+
     const agendas = await db.collection(collectionName).aggregate([
       {
         $lookup: {
@@ -97,6 +105,9 @@ router.put('/:id', authenticateToken, async (req: AuthenticatedRequest, res) => 
       return res.status(403).send('Forbidden: You do not own this agenda');
     }
 
+    const { isActive } = req.body;
+    await db.collection(collectionName).updateOne({ _id: new ObjectId(id) }, { $set: { isActive } });
+
     res.status(200).send('Agenda updated successfully');
   } catch (e) {
     res.status(500).send('Error updating agenda');
@@ -124,6 +135,10 @@ router.delete('/:id', authenticateToken, async (req: AuthenticatedRequest, res) 
     if (agenda.creatorId.toHexString() !== userId) {
       return res.status(403).send('Forbidden: You do not own this agenda');
     }
+
+    await db.collection(collectionName).deleteOne({ _id: new ObjectId(id) });
+    // 관련된 투표도 삭제
+    await db.collection('votes').deleteMany({ agendaId: new ObjectId(id) });
 
     res.status(200).send('Agenda deleted successfully');
   } catch (e) {

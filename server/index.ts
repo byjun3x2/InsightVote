@@ -102,17 +102,27 @@ io.on('connection', (socket) => {
       }
 
       // 새 투표 기록
-      await db.collection('votes').insertOne({
+      const result = await db.collection('votes').insertOne({
         agendaId: new ObjectId(agendaId),
         optionId,
         userId: new ObjectId(userId),
         timestamp: new Date(),
       });
 
-      console.log('받은 투표 데이터:', voteData, 'From user:', userId);
+      // 방금 삽입한 투표 데이터를 다시 조회하여 클라이언트에 전달 (데이터 형식 일관성)
+      const newVote = await db.collection('votes').findOne({ _id: result.insertedId });
 
-      // 받은 투표를 모든 클라이언트에 브로드캐스트
-      io.emit('voteUpdate', { ...voteData, userId });
+      if (newVote) {
+        console.log('받은 투표 데이터:', voteData, 'From user:', userId);
+
+        // 받은 투표를 모든 클라이언트에 브로드캐스트
+        io.emit('voteUpdate', {
+          ...newVote,
+          id: newVote._id.toString(),
+          agendaId: newVote.agendaId.toString(),
+          userId: newVote.userId.toString(),
+        });
+      }
 
     } catch (e) {
       console.error('Error processing vote:', e);

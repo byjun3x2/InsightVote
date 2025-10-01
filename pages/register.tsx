@@ -15,7 +15,7 @@ const RegisterPage: React.FC = () => {
   const checkUsername = async () => {
     if (!username) return;
     setUsernameStatus('checking');
-    const response = await fetch('http://localhost:4000/api/auth/check-username', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/check-username`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username }),
@@ -26,7 +26,7 @@ const RegisterPage: React.FC = () => {
   const checkEmail = async () => {
     if (!email) return;
     setEmailStatus('checking');
-    const response = await fetch('http://localhost:4000/api/auth/check-email', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/check-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -44,7 +44,7 @@ const RegisterPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:4000/api/auth/register', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, name, email, password }),

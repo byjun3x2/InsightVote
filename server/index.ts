@@ -164,8 +164,8 @@ io.on('connection', (socket) => {
       timestamp: new Date(),
     };
 
-    io.to(agendaId).emit('chatMessage', messagePayload);
-    console.log(`Message sent to room ${agendaId}:`, messagePayload);
+    socket.broadcast.to(agendaId).emit('chatMessage', messagePayload);
+    console.log(`Message broadcast to room ${agendaId}:`, messagePayload);
   });
 });
 

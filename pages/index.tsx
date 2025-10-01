@@ -9,7 +9,9 @@ import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/router';
 import Header from '../components/Header';
 
-const API_BASE_URL = 'http://192.168.35.103:4000'; // <-- 이 주소를 실제 IP로 변경하세요
+import { useAgendaStore } from '../store/useAgendaStore';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const Home: React.FC = () => {
   const [agendas, setAgendas] = useState<Agenda[]>([]);
@@ -17,7 +19,7 @@ const Home: React.FC = () => {
   const [selectedOptionId, setSelectedOptionId] = useState<string>('');
   const [allVotes, setAllVotes] = useState<VoteResult[]>([]);
   const [liveVotes, setLiveVotes] = useState<VoteResult[]>([]);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const { isCreateAgendaFormVisible, showCreateAgendaForm, hideCreateAgendaForm } = useAgendaStore();
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [filterTag, setFilterTag] = useState<string | null>(null); // 필터 태그 상태 추가
@@ -130,7 +132,20 @@ const Home: React.FC = () => {
   }, [selectedAgendaId]);
 
   const handleSendMessage = (message: string) => {
-    if (socketRef.current && selectedAgendaId) {
+    if (socketRef.current && selectedAgendaId && user) {
+      // Optimistic update: UI에 메시지를 즉시 추가
+      const optimisticMessage: ChatMessage = {
+        id: new Date().toISOString(), // 임시 ID
+        message,
+        sender: {
+          id: user.id,
+          name: user.name,
+        },
+        timestamp: new Date(),
+      };
+      setMessages((prevMessages) => [...prevMessages, optimisticMessage]);
+
+      // 서버로 메시지 전송
       socketRef.current.emit('chatMessage', { agendaId: selectedAgendaId, message });
     }
   };
@@ -177,7 +192,7 @@ const Home: React.FC = () => {
       });
       if (response.ok) {
         fetchAgendas();
-        setShowCreateForm(false);
+        hideCreateAgendaForm();
       }
     } catch (e) {
       console.error('Error creating agenda:', e);
@@ -209,14 +224,13 @@ const Home: React.FC = () => {
       <Header />
       <div style={{ display: 'flex' }}>
         <div style={{ flex: 1, padding: '1rem', transition: 'margin-right 0.3s ease-in-out', marginRight: selectedAgendaId ? '350px' : '0' }}>
-          {!showCreateForm ? (
-            <button onClick={() => setShowCreateForm(true)} style={{ marginBottom: '1rem' }}>
+          {!isCreateAgendaFormVisible ? (
+            <button onClick={showCreateAgendaForm} style={{ marginBottom: '1rem' }}>
               새 안건 만들기
             </button>
           ) : (
             <CreateAgendaForm
               onSubmit={handleCreateAgenda}
-              onCancel={() => setShowCreateForm(false)}
             />
           )}
 

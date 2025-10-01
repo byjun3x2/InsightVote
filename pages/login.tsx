@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 
-const API_BASE_URL = 'http://192.168.35.103:4000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');

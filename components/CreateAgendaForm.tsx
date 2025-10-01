@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { useAgendaStore } from '../store/useAgendaStore';
 
 interface Props {
   onSubmit: (data: { title: string; options: { text: string }[]; tags?: string[]; startTime?: string; deadline?: string; voteLimit?: number }) => void;
-  onCancel: () => void;
 }
 
-const CreateAgendaForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
+const CreateAgendaForm: React.FC<Props> = ({ onSubmit }) => {
+  const hideCreateAgendaForm = useAgendaStore((state) => state.hideCreateAgendaForm);
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState(''); // 태그 상태 추가
   const [options, setOptions] = useState([{ text: '' }, { text: '' }]);
@@ -144,7 +145,7 @@ const CreateAgendaForm: React.FC<Props> = ({ onSubmit, onCancel }) => {
         <button type="submit" style={{ ...buttonStyle, backgroundColor: '#28a745', color: 'white' }}>
           안건 생성
         </button>
-        <button type="button" onClick={onCancel} style={{ ...buttonStyle, backgroundColor: '#6c757d', color: 'white' }}>
+        <button type="button" onClick={hideCreateAgendaForm} style={{ ...buttonStyle, backgroundColor: '#6c757d', color: 'white' }}>
           취소
         </button>
       </div>

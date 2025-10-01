@@ -93,9 +93,25 @@ const Home: React.FC = () => {
       console.log('서버에 연결됨:', socketRef.current?.id);
     });
 
-    socketRef.current.on('voteUpdate', (voteData) => {
-      setLiveVotes((prev) => [...prev, voteData]);
-      setAllVotes((prev) => [...prev, voteData]);
+    socketRef.current.on('voteUpdate', (voteData: VoteResult) => {
+      const updateUserVote = (votes: VoteResult[]) => {
+        const existingVoteIndex = votes.findIndex(
+          (vote) => vote.agendaId === voteData.agendaId && vote.userId === voteData.userId
+        );
+
+        if (existingVoteIndex !== -1) {
+          // 기존 투표가 있으면 업데이트
+          const newVotes = [...votes];
+          newVotes[existingVoteIndex] = voteData;
+          return newVotes;
+        } else {
+          // 기존 투표가 없으면 추가
+          return [...votes, voteData];
+        }
+      };
+
+      setLiveVotes(updateUserVote);
+      setAllVotes(updateUserVote);
       fetchAgendas();
     });
 
@@ -258,7 +274,12 @@ const Home: React.FC = () => {
             results={allVotes}
             allUsers={allUsers}
           />
-          <ResultChart results={liveVotes} agendas={agendas} allUsers={allUsers} />
+          <ResultChart
+            key={JSON.stringify(liveVotes)}
+            results={liveVotes}
+            agendas={agendas}
+            allUsers={allUsers}
+          />
         </div>
         <ChatPanel
           agenda={selectedAgenda}

@@ -25,8 +25,8 @@ const ResultChart: React.FC<Props> = ({ results, agendas, allUsers }) => {
     <div style={{ marginTop: '2rem' }}>
       <h2>실시간 투표 결과</h2>
       <ul>
-        {results.map((res, idx) => (
-          <li key={idx}>{getResultText(res)}</li>
+        {results.map((res) => (
+          <li key={res.id}>{getResultText(res)}</li>
         ))}
       </ul>
     </div>

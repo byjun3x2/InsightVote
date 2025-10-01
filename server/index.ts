@@ -90,37 +90,38 @@ io.on('connection', (socket) => {
         }
       }
 
-      // 3. 중복 투표 확인
+      // 3. 사용자 기존 투표 조회 (있으면 업데이트, 없으면 생성)
       const existingVote = await db.collection('votes').findOne({
         agendaId: new ObjectId(agendaId),
         userId: new ObjectId(userId),
       });
 
+      let savedVote: any = null;
       if (existingVote) {
-        console.log(`User ${userId} already voted on agenda ${agendaId}`);
-        return;
+        // 기존 투표가 있으면 선택지만 변경하고 타임스탬프 갱신
+        await db.collection('votes').updateOne(
+          { _id: existingVote._id },
+          { $set: { optionId, timestamp: new Date() } }
+        );
+        savedVote = await db.collection('votes').findOne({ _id: existingVote._id });
+      } else {
+        // 기존 투표가 없으면 새로 생성
+        const insertResult = await db.collection('votes').insertOne({
+          agendaId: new ObjectId(agendaId),
+          optionId,
+          userId: new ObjectId(userId),
+          timestamp: new Date(),
+        });
+        savedVote = await db.collection('votes').findOne({ _id: insertResult.insertedId });
       }
 
-      // 새 투표 기록
-      const result = await db.collection('votes').insertOne({
-        agendaId: new ObjectId(agendaId),
-        optionId,
-        userId: new ObjectId(userId),
-        timestamp: new Date(),
-      });
-
-      // 방금 삽입한 투표 데이터를 다시 조회하여 클라이언트에 전달 (데이터 형식 일관성)
-      const newVote = await db.collection('votes').findOne({ _id: result.insertedId });
-
-      if (newVote) {
-        console.log('받은 투표 데이터:', voteData, 'From user:', userId);
-
-        // 받은 투표를 모든 클라이언트에 브로드캐스트
+      if (savedVote) {
+        // 모든 클라이언트에 브로드캐스트 (프론트에서 동일 유저/안건 투표는 덮어씀)
         io.emit('voteUpdate', {
-          ...newVote,
-          id: newVote._id.toString(),
-          agendaId: newVote.agendaId.toString(),
-          userId: newVote.userId.toString(),
+          ...savedVote,
+          id: savedVote._id.toString(),
+          agendaId: savedVote.agendaId.toString(),
+          userId: savedVote.userId.toString(),
         });
       }
 

@@ -2,11 +2,10 @@
 
 프로젝트 세팅
 
-## Yarn 최신 버전 설치 (글로벌이 아니면 프로젝트별 설치도 가능)
+## Yarn 최신 버전 설치
 corepack enable
-corepack prepare yarn@stable --activate
 
-## Yarn Berry (v2 이상) 초기화
+## Yarn Berry (v2 이상) 초기화 (프로젝트 Root 위치에서 실행)
 yarn set version berry
 
 ## PnP 설정을 기본으로 활성 (yarn 2+ 기본값)
@@ -19,6 +18,11 @@ yarn init -y
 yarn add @yarnpkg/sdks -D
 ## VSCode YarnBerry 설정
 yarn dlx @yarnpkg/sdks vscode
+
+## .env.local 생성 (프로젝트 root 위치에)
+NEXT_PUBLIC_API_URL=http://본인ip주소:4000
+
+//////////////////////////////////////////////////////////////
 
 ## 250926 
 해야할일 기본적인 socket.io 통신
